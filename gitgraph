@@ -215,7 +215,7 @@ function create_dot_graph()
         # Highlight nodes.
         #
         if [[ "$HIGH" == "1" ]] &&
-           grep -q ^${shas[0]:0:5} "$TMP_HIGH"
+           grep -q ^${shas[0]:0:5} "$TMP_HIGH" 2>/dev/null
         then
             echo "    \"${shas[0]:0:5}\" [style=\"filled\"];"
             echo "    \"${shas[0]:0:5}\" [fillcolor=\"pink\"];"
