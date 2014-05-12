@@ -237,7 +237,7 @@ function create_dot_graph()
 
 function main()
 {
-    if ! check_dependencies dot dia eog git sed cut
+    if ! check_dependencies dot git sed cut
     then
         return 1
     fi
@@ -253,6 +253,7 @@ function main()
 
         if [[ "$QUIET" != "1" ]]
         then
+            ! check_dependencies dia && return 1
             dia "$TMP_SVG"
             rm "$TMP_SVG"
         else
@@ -263,6 +264,7 @@ function main()
         
         if [[ "$QUIET" != "1" ]]
         then
+            ! check_dependencies eog && return 1
             eog "$TMP_PNG"
             rm "$TMP_PNG"
         else
