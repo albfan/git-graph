@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Global vars (I know, evil!)
 #
@@ -12,6 +13,12 @@ QUIET=0
 
 ###############################################################################
 #
+
+TMP_HIGH="/tmp/$$-tmp.high"
+TMP_DOT="/tmp/$$-tmp.dot"
+TMP_SVG="/tmp/$$-out.svg"
+TMP_PNG="/tmp/$$-out.png"
+
 function check_dependencies()
 {
     NOT_FOUND=""
@@ -78,7 +85,7 @@ function process_args()
             #
             HIGH=1
             shift
-            git log --first-parent --pretty=format:"%H" $1 > tmp.high
+            git log --first-parent --pretty=format:"%H" $1 > "$TMP_HIGH"
         fi
 
         shift
@@ -208,10 +215,11 @@ function create_dot_graph()
         # Highlight nodes.
         #
         if [[ "$HIGH" == "1" ]] &&
-           grep -q ^${shas[0]:0:5} tmp.high
+           grep -q ^${shas[0]:0:5} "$TMP_HIGH"
         then
             echo "    \"${shas[0]:0:5}\" [style=\"filled\"];"
             echo "    \"${shas[0]:0:5}\" [fillcolor=\"pink\"];"
+            rm "$TMP_HIGH"
         fi
         
         
@@ -230,28 +238,31 @@ function main()
     then
         return 1
     fi
-    
+
     process_args $*
-    create_dot_graph > tmp.dot
+    create_dot_graph > "$TMP_DOT"
     
     # Invoke "dot" and show graph
     #
     if [[ "$USE_DIA" == "1" ]]
     then
-        dot -Tsvg -o out.svg tmp.dot
+        dot -Tsvg -o "$TMP_SVG" "$TMP_DOT"
 
         if [[ "$QUIET" != "1" ]]
         then
-            dia out.svg
+            dia "$TMP_SVG"
+            rm "$TMP_SVG"
         fi
     else
-        dot -Tpng -o out.png tmp.dot
+        dot -Tpng -o "$TMP_PNG" "$TMP_DOT"
         
         if [[ "$QUIET" != "1" ]]
         then
-            eog out.png
+            eog "$TMP_PNG"
+            rm "$TMP_PNG"
         fi
     fi
+    rm "$TMP_DOT"
 }
 
 main $*
