@@ -6,7 +6,7 @@ MAX=100
 ALL=""
 CLEAN=0
 DEEP_CLEAN=0
-USE_DIA=1
+USE_DIA=0
 HIGH=0
 ARGS=""
 QUIET=0
@@ -14,10 +14,13 @@ QUIET=0
 ###############################################################################
 #
 
+OUT_SVG="out.svg"
+OUT_PNG="out.png"
+
 TMP_HIGH="/tmp/$$-tmp.high"
 TMP_DOT="/tmp/$$-tmp.dot"
-TMP_SVG="/tmp/$$-out.svg"
-TMP_PNG="/tmp/$$-out.png"
+TMP_SVG="/tmp/$$-$OUT_SVG"
+TMP_PNG="/tmp/$$-$OUT_PNG"
 
 function check_dependencies()
 {
@@ -69,11 +72,11 @@ function process_args()
             #
             CLEAN=1
             DEEP_CLEAN=1
-        elif [[ "$1" == "-p" ]]
+        elif [[ "$1" == "-d" ]]
         then
-            # Output as png (not svg)
+            # Output as svg (not png)
             #
-            USE_DIA=0
+            USE_DIA=1
         elif [[ "$1" == "-q" ]]
         then
             # Quiet.
@@ -252,6 +255,8 @@ function main()
         then
             dia "$TMP_SVG"
             rm "$TMP_SVG"
+        else
+            mv "$TMP_SVG" "./$OUT_SVG"
         fi
     else
         dot -Tpng -o "$TMP_PNG" "$TMP_DOT"
@@ -260,6 +265,8 @@ function main()
         then
             eog "$TMP_PNG"
             rm "$TMP_PNG"
+        else
+            mv "$TMP_PNG" "./$OUT_PNG"
         fi
     fi
     rm "$TMP_DOT"
