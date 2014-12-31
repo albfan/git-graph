@@ -20,7 +20,7 @@ ALL=""
 CLEAN=0
 DEEP_CLEAN=0
 SVG=1
-HIGH=0
+HIGH=
 ARGS=""
 QUIET=0
 VISOR=$(git config --get graph.viewer)
@@ -122,9 +122,8 @@ function process_args()
             ;;
          --high)
             # Highlight the left-parent history of a given branch/tag/hash.
-            HIGH=1
             shift
-            git log --first-parent --pretty=format:"%H" $1 > tmp.high
+            HIGH=$1
             ;;
          -h|--help)
             help
@@ -266,8 +265,8 @@ function create_dot_graph()
       #######################################################################
       # Highlight nodes.
       #
-      if [[ "$HIGH" == "1" ]] &&
-         grep -q ^${shas[0]:0:5} tmp.high
+      if [ -n "$HIGH" ] &&
+         git log --first-parent --pretty=format:"%H" $HIGH | grep -q ^${shas[0]:0:5}
       then
          echo "    \"${shas[0]:0:5}\" [style=\"filled\"];"
          echo "    \"${shas[0]:0:5}\" [fillcolor=\"pink\"];"
@@ -291,13 +290,12 @@ function main()
    fi
 
    process_args $*
-   create_dot_graph > tmp.dot
 
    # Invoke "dot" and show graph
    #
    if [[ "$SVG" == "1" ]]
    then
-      dot -Tsvg -o out.svg tmp.dot
+      create_dot_graph | dot -Tsvg -o out.svg
 
       if [[ "$QUIET" != "1" ]]
       then
@@ -308,7 +306,7 @@ function main()
          $VISOR out.svg
       fi
    else
-      dot -Tpng -o out.png tmp.dot
+      create_dot_graph | dot -Tpng -o out.png
 
       if [[ "$QUIET" != "1" ]]
       then
