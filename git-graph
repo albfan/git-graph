@@ -1,6 +1,20 @@
-###############################################################################
-# Global vars (I know, evil!)
-#
+#!/bin/bash
+
+# debug {{{
+eval SCRIPT_DEBUG="\$$(basename $0 | tr - _)_DEBUG"
+SCRIPT_DEBUG=${SCRIPT_DEBUG:--1}
+
+if [ "$SCRIPT_DEBUG" -ge 1 ]
+then
+   set -x
+fi
+if [ "$SCRIPT_DEBUG" -ge 10 ]
+then
+   set -v
+fi
+#}}}
+
+# init {{{
 MAX=100
 ALL=""
 CLEAN=0
@@ -9,9 +23,36 @@ USE_DIA=1
 HIGH=0
 ARGS=""
 QUIET=0
+# }}}
 
-###############################################################################
-#
+# functions {{{
+function help {
+   local scriptname="$(basename $0)"
+   cat >&2 <<EOF
+
+$scriptname [options] [args]
+
+Shows a graph with repo history
+
+Options:
+   -a, --all       Use all branches history
+   -c, --clean     Use only nodes with one child
+       --cc        Like clean but avoid nodes with parents don't get aggregated 
+   -p, --png       Output to png. (default svg) 
+   -q, --quiet     Be quiet
+       --high      Highlight left parent history
+   -h, --help      Show this help
+
+Examples:
+
+ $ $scriptname
+ $ $scriptname --cc
+ $ $scriptname -ap
+ $ $scriptname --all --png
+
+EOF
+}
+
 function check_dependencies()
 {
     NOT_FOUND=""
@@ -38,69 +79,86 @@ function check_dependencies()
     fi
 }
 
-###############################################################################
-#
 function process_args()
 {
-    while [[ $# > 0 && "${1:0:1}" == "-" ]]
-    do
-        if [[ "$1" == "-a" ]]
-        then
+   TEMP=$(getopt -o "acpqh" -l all,clean,cc,png,quiet,high,help -n $(basename $0) -- "$@")
+
+   EXIT=$?
+   if [ $EXIT != 0 ]
+   then
+      help
+      exit $EXIT
+   fi
+
+   # process script arguments
+   eval set -- "$TEMP"
+
+   while true
+   do
+      case "$1" in
+         -a|--all)
             # Capture the log for all, not just the current branch.
-            #
             ALL="--all"
-        elif [[ "$1" == "-c" ]]
-        then
+            ;;
+         -c|--clean) 
             # Simplify graph by aggregating nodes with only one child.
-            #
             CLEAN=1
-        elif [[ "$1" == "-cc" ]]
-        then
+            ;;
+         --cc) 
             # Simplify "same as -c", but make sure nodes with more than one
             # parent don't get aggregated with others. (kinda of a sluggish 
             # operation).
-            #
             CLEAN=1
             DEEP_CLEAN=1
-        elif [[ "$1" == "-p" ]]
-        then
+            ;;
+         -p|--png) 
             # Output as png (not svg)
-            #
             USE_DIA=0
-        elif [[ "$1" == "-q" ]]
-        then
+            ;;
+         -q|--quiet) 
             # Quiet.
-            #
             QUIET=1
-        elif [[ "$1" == "-high" ]]
-        then
+            ;;
+         --high)
             # Highlight the left-parent history of a given branch/tag/hash.
-            #
             HIGH=1
             shift
             git log --first-parent --pretty=format:"%H" $1 > tmp.high
-        fi
+            ;;
+         -h|--help)
+            help
+            exit
+            ;;
+         --)
+            shift
+            break ;;
+         *)
+            cat <&2 <<EOF
 
-        shift
-    done
+Error, unknow arguments $1
+EOF
+            help
+            exit 1
+            ;;
+      esac
+      shift
+   done
     
-    if (($# > 0)) &&
-       [[ "$(echo $1 | tr -d \"[0-9]\")" == "" ]]
-    then
-        # If final option is numerical, this is the maximum number of lines to 
-        # extract from the log.
-        #
-        MAX=$1
-        shift
-    fi
+   if (($# > 0)) &&
+      [[ "$(echo $1 | tr -d \"[0-9]\")" == "" ]]
+   then
+      # If final option is numerical, this is the maximum number of lines to 
+      # extract from the log.
+      #
+      MAX=$1
+      shift
+   fi
     
-    # Pass the rest of the command line arguments to 'git log'.
-    #
-    ARGS=$*
+   # Pass the rest of the command line arguments to 'git log'.
+   #
+   ARGS=$*
 }
 
-###############################################################################
-#
 function create_dot_graph()
 {
     all_shas=$(git log $ALL --pretty=format:"%H" $ARGS | head -n $MAX)
@@ -253,5 +311,9 @@ function main()
         fi
     fi
 }
+# }}}
 
-main $*
+main "$@"
+
+# vim: fdm=marker
+
