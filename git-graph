@@ -31,7 +31,7 @@ function help {
    local scriptname="$(basename $0)"
    cat >&2 <<EOF
 
-$scriptname [options] [args]
+$scriptname [options] [depth] [refs]
 
 Shows a graph with repo history
 
@@ -44,6 +44,11 @@ Options:
        --high=rev  Highlight left parent history of <rev>
    -h, --help      Show this help
 
+   depth           Max number of log entries to process (default: 100)
+    
+
+   refs            Commit references (tags, branches, shas). This is passed
+                    directly to "git log"
 Examples:
 
  $ $scriptname
