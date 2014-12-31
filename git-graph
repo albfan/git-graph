@@ -19,10 +19,11 @@ MAX=100
 ALL=""
 CLEAN=0
 DEEP_CLEAN=0
-USE_DIA=1
+SVG=1
 HIGH=0
 ARGS=""
 QUIET=0
+VISOR=$(git config --get graph.viewer)
 # }}}
 
 # functions {{{
@@ -40,7 +41,7 @@ Options:
        --cc        Like clean but avoid nodes with parents don't get aggregated 
    -p, --png       Output to png. (default svg) 
    -q, --quiet     Be quiet
-       --high      Highlight left parent history
+       --high=rev  Highlight left parent history of <rev>
    -h, --help      Show this help
 
 Examples:
@@ -81,7 +82,7 @@ function check_dependencies()
 
 function process_args()
 {
-   TEMP=$(getopt -o "acpqh" -l all,clean,cc,png,quiet,high,help -n $(basename $0) -- "$@")
+   TEMP=$(getopt -o "acpqh" -l all,clean,cc,png,quiet,high:,help -n $(basename $0) -- "$@")
 
    EXIT=$?
    if [ $EXIT != 0 ]
@@ -113,7 +114,7 @@ function process_args()
             ;;
          -p|--png) 
             # Output as png (not svg)
-            USE_DIA=0
+            SVG=0
             ;;
          -q|--quiet) 
             # Quiet.
@@ -284,7 +285,7 @@ function create_dot_graph()
 
 function main()
 {
-   if ! check_dependencies dot dia eog git sed cut
+   if ! check_dependencies dot git sed cut
    then
       return 1
    fi
@@ -294,20 +295,28 @@ function main()
 
    # Invoke "dot" and show graph
    #
-   if [[ "$USE_DIA" == "1" ]]
+   if [[ "$SVG" == "1" ]]
    then
       dot -Tsvg -o out.svg tmp.dot
 
       if [[ "$QUIET" != "1" ]]
       then
-         dia out.svg
+         if [ -z "$VISOR" ] && check_dependencies dia 
+         then
+            VISOR=dia
+         fi
+         $VISOR out.svg
       fi
    else
       dot -Tpng -o out.png tmp.dot
 
       if [[ "$QUIET" != "1" ]]
       then
-          eog out.png
+         if [ -z "$VISOR" ] && check_dependencies eog 
+         then
+            VISOR=eog
+         fi
+          $VISOR out.png
       fi
    fi
 }
