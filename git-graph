@@ -295,7 +295,6 @@ function main()
    #
    if [[ "$SVG" == "1" ]]
    then
-      create_dot_graph | dot -Tsvg -o out.svg
 
       if [[ "$QUIET" != "1" ]]
       then
@@ -303,10 +302,9 @@ function main()
          then
             VISOR=dia
          fi
-         $VISOR out.svg
+         create_dot_graph | dot -Tsvg | $VISOR -
       fi
    else
-      create_dot_graph | dot -Tpng -o out.png
 
       if [[ "$QUIET" != "1" ]]
       then
@@ -314,7 +312,7 @@ function main()
          then
             VISOR=eog
          fi
-          $VISOR out.png
+         create_dot_graph | dot -Tpng | $VISOR -
       fi
    fi
 }
