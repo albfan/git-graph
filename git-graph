@@ -312,12 +312,12 @@ function create_dot_graph()
 
 function main()
 {
+   process_args $*
+
    if ! check_dependencies dot git sed cut
    then
-      return 1
+      exit 1
    fi
-
-   process_args $*
 
    # Invoke "dot" and show graph
    #
